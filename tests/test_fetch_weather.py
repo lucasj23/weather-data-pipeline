@@ -23,6 +23,10 @@ def test_fetch_city_weather_mock(monkeypatch):
 
     monkeypatch.setattr(fw.requests, "get", fake_get)
 
+    # Recordar que no le pasa los params directamente, 
+    # los captura del llamado real a la función mockeada, 
+    # porque lo que testeamos es que se construya bien el request.
+
     out = fw.fetch_city_weather("BUE", -34.61, -58.38, "2025-01-01", "2025-01-31")
     # Checks expected parameters
     assert calls["params"]["latitude"] == -34.61

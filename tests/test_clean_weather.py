@@ -2,7 +2,7 @@ import os, json
 import pandas as pd
 from transformations.clean_weather import clean_weather
 
-def _write_raw(tmp_path, run_date, payload):
+def _write_raw(tmp_path, run_date, payload): # carpeta temporal
     data_dir = tmp_path / "data"
     raw_dir = data_dir / "raw" / run_date
     raw_dir.mkdir(parents=True, exist_ok=True)
