@@ -1,11 +1,15 @@
-import os, json
-import requests
+import json
+import os
 from datetime import date, timedelta
+
+import requests
 
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 
 
-def fetch_city_weather(city_code: str, lat: float, lon: float, start_date: str, end_date: str) -> dict:
+def fetch_city_weather(
+    city_code: str, lat: float, lon: float, start_date: str, end_date: str
+) -> dict:
     """Fetch daily weather for a city and attach metadata for the pipeline."""
     params = {
         "latitude": lat,

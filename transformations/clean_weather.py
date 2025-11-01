@@ -1,4 +1,7 @@
-import os, json, glob
+import glob
+import json
+import os
+
 import pandas as pd
 
 
@@ -7,6 +10,7 @@ def _latest_run_date(base_dir: str) -> str:
     if not parts:
         raise FileNotFoundError("No RAW partitions found")
     return os.path.basename(parts[-1])
+
 
 def clean_weather(run_date: str | None = None) -> str:
     BASE_DIR = os.getenv("DATA_DIR", "./data")
@@ -24,19 +28,21 @@ def clean_weather(run_date: str | None = None) -> str:
         city = city_blob.get("_city_code")
         daily = city_blob.get("daily", {})
         dates = daily.get("time", [])
-        tmax  = daily.get("temperature_2m_max", [])
-        tmin  = daily.get("temperature_2m_min", [])
-        prcp  = daily.get("precipitation_sum", [])
+        tmax = daily.get("temperature_2m_max", [])
+        tmin = daily.get("temperature_2m_min", [])
+        prcp = daily.get("precipitation_sum", [])
         # Build one record per date
         for d, mx, mn, pc in zip(dates, tmax, tmin, prcp):
-            rows.append({
-                "run_date": run_date,
-                "city_code": city,
-                "date": d,
-                "temp_max": mx,
-                "temp_min": mn,
-                "precip_mm": pc,
-            })
+            rows.append(
+                {
+                    "run_date": run_date,
+                    "city_code": city,
+                    "date": d,
+                    "temp_max": mx,
+                    "temp_min": mn,
+                    "precip_mm": pc,
+                }
+            )
 
     df = pd.DataFrame(rows)
 
@@ -57,6 +63,7 @@ def clean_weather(run_date: str | None = None) -> str:
 
     print(f"✅ CLEAN saved: {out_parquet}  rows={len(df)}")
     return out_parquet
+
 
 if __name__ == "__main__":
     clean_weather()

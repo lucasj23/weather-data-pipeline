@@ -1,15 +1,20 @@
-import types
+
 
 def test_fetch_city_weather_mock(monkeypatch):
     # Test to make sure the API builds correctly and handles responses
     from ingestion import fetch_weather as fw
+
     # Mock of requests.get
     calls = {}
+
     def fake_get(url, params=None, timeout=30):
         calls["url"] = url
         calls["params"] = params
+
         class Resp:
-            def raise_for_status(self): return None
+            def raise_for_status(self):
+                return None
+
             def json(self):
                 return {
                     "daily": {
@@ -19,12 +24,13 @@ def test_fetch_city_weather_mock(monkeypatch):
                         "precipitation_sum": [0.0],
                     }
                 }
+
         return Resp()
 
     monkeypatch.setattr(fw.requests, "get", fake_get)
 
-    # Recordar que no le pasa los params directamente, 
-    # los captura del llamado real a la función mockeada, 
+    # Recordar que no le pasa los params directamente,
+    # los captura del llamado real a la función mockeada,
     # porque lo que testeamos es que se construya bien el request.
 
     out = fw.fetch_city_weather("BUE", -34.61, -58.38, "2025-01-01", "2025-01-31")
