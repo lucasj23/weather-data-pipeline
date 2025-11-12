@@ -31,8 +31,10 @@ def fetch_city_weather(
 def _default_cities():
     # (city_code, lat, lon)
     return [
-        ("BUE", -34.61, -58.38),  # Buenos Aires
-        ("SCL", -33.45, -70.66),  # Santiago
+        ("BUE", -34.61, -58.38),   # Buenos Aires
+        ("SCL", -33.45, -70.66),   # Santiago
+        ("MAD", 40.42, -3.70),     # Madrid
+        ("MIA", 25.76, -80.19),    # Miami
     ]
 
 
