@@ -1,4 +1,3 @@
-
 import os
 import glob
 import pandas as pd
@@ -8,15 +7,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 DATA_DIR = os.getenv("DATA_DIR", "./data")
-PG_DSN = os.getenv("PG_DSN", "postgresql+psycopg2://postgres:postgres@localhost:5432/weather")  # Conexion chain to docker
+PG_DSN = os.getenv(
+    "PG_DSN", "postgresql+psycopg2://postgres:postgres@localhost:5432/weather"
+)  # Conexion chain to docker
 
 engine = create_engine(PG_DSN, pool_pre_ping=True)
 # Conexion motor to SQL (alchemy). This is the conexion to the DB.
 # This allows pandas to use to_sql method to load dataframes directly to the DB (very important).
 
 
-#  Helper: UPSERT method. 
+#  Helper: UPSERT method.
 # NOTE: I had to add this because pandas 'to_sql' does not support upserts natively.
+
 
 def make_upsert_method(conflict_keys: list[str], do_update: bool = False):
     """
@@ -25,6 +27,7 @@ def make_upsert_method(conflict_keys: list[str], do_update: bool = False):
     - do_update=False → ON CONFLICT DO NOTHING (skip duplicates).
     - do_update=True  → ON CONFLICT DO UPDATE (refresh non-key columns).
     """
+
     def upsert_method(table, conn, keys, data_iter):
         rows = [dict(zip(keys, row)) for row in data_iter]
         if not rows:
@@ -39,14 +42,11 @@ def make_upsert_method(conflict_keys: list[str], do_update: bool = False):
                 if c.name not in conflict_keys
             }
             stmt = insert_stmt.on_conflict_do_update(
-                index_elements=conflict_keys,
-                set_=update_cols
+                index_elements=conflict_keys, set_=update_cols
             )
         else:
             # Do nothing if row already exists (idempotent insert)
-            stmt = insert_stmt.on_conflict_do_nothing(
-                index_elements=conflict_keys
-            )
+            stmt = insert_stmt.on_conflict_do_nothing(index_elements=conflict_keys)
 
         conn.execute(stmt)
 
@@ -55,12 +55,13 @@ def make_upsert_method(conflict_keys: list[str], do_update: bool = False):
 
 # Generic loader function
 
+
 def load_weather_table(
     parquet_glob: str,
     table_name: str,
     columns: list[str],
     conflict_keys: list[str],
-    do_update: bool = False
+    do_update: bool = False,
 ) -> int:
     """
     Load multiple Parquet files into Postgres.
@@ -104,7 +105,7 @@ def load_weather_table(
             schema="weather",
             if_exists="append",
             index=False,
-            method=method
+            method=method,
         )
 
         total_rows += len(df)
@@ -113,42 +114,72 @@ def load_weather_table(
     return total_rows
 
 
-
-# Loading tables SILVER (clean) + GOLD: 
+# Loading tables SILVER (clean) + GOLD:
 
 if __name__ == "__main__":
     # 1) SILVER (clean) — from data/clean/<run_date>/weather.parquet
     load_weather_table(
         parquet_glob="clean/*/weather.parquet",
         table_name="weather_silver",
-        columns=["run_date", "city_code", "date", "temp_min", "temp_max", "temp_avg", "precip_mm"],
-        conflict_keys=["city_code", "date"],   # one row per city & date in silver
-        do_update=False
+        columns=[
+            "run_date",
+            "city_code",
+            "date",
+            "temp_min",
+            "temp_max",
+            "temp_avg",
+            "precip_mm",
+        ],
+        conflict_keys=["city_code", "date"],  # one row per city & date in silver
+        do_update=False,
     )
 
     # 2) GOLD daily enriched — from data/gold/<run_date>/weather_daily_enriched.parquet
     load_weather_table(
         parquet_glob="gold/*/weather_daily_enriched.parquet",
         table_name="weather_daily",
-        columns=["run_date", "city_code", "date", "temp_min", "temp_max", "temp_avg", "temp_range", "precip_mm"],
+        columns=[
+            "run_date",
+            "city_code",
+            "date",
+            "temp_min",
+            "temp_max",
+            "temp_avg",
+            "temp_range",
+            "precip_mm",
+        ],
         conflict_keys=["city_code", "date"],
-        do_update=False
+        do_update=False,
     )
 
     # 3) GOLD monthly KPIs — from data/gold/<run_date>/weather_monthly_kpis.parquet
     load_weather_table(
         parquet_glob="gold/*/weather_monthly_kpis.parquet",
         table_name="weather_monthly_kpis",
-        columns=["run_date", "city_code", "month", "avg_temp_min", "avg_temp_max", "avg_temp_avg", "total_precip"],
+        columns=[
+            "run_date",
+            "city_code",
+            "month",
+            "avg_temp_min",
+            "avg_temp_max",
+            "avg_temp_avg",
+            "total_precip",
+        ],
         conflict_keys=["city_code", "month"],
-        do_update=False
+        do_update=False,
     )
 
     # 4) GOLD daily KPIs — from data/gold/<run_date>/weather_daily_kpis.parquet
     load_weather_table(
         parquet_glob="gold/*/weather_daily_kpis.parquet",
         table_name="weather_daily_kpis",
-        columns=["run_date", "city_code", "avg_temp_min", "avg_temp_max", "avg_precip_mm"],
+        columns=[
+            "run_date",
+            "city_code",
+            "avg_temp_min",
+            "avg_temp_max",
+            "avg_precip_mm",
+        ],
         conflict_keys=["city_code", "run_date"],
-        do_update=False
-)
+        do_update=False,
+    )

@@ -74,7 +74,7 @@ def build_gold(run_date: str | None = None) -> str:
 
     # 2.b YoY same-day (shift by 1 year)
     prev = daily_kpi[["city_code", "date", "temp_min", "temp_max"]].copy()
-    
+
     # Mapping date to previous year
     prev["date"] = prev["date"] + pd.DateOffset(years=1)
     prev = prev.rename(columns={"temp_min": "temp_min_ly", "temp_max": "temp_max_ly"})
@@ -141,13 +141,13 @@ def build_gold(run_date: str | None = None) -> str:
 
     # Harmonize columns before saving.
     # 1) add run_date columns (explicit, besides folder partition)
-    _run_date = (run_date or datetime.date.today().isoformat())
+    _run_date = run_date or datetime.date.today().isoformat()
     daily_kpi["run_date"] = _run_date
     monthly_kpi["run_date"] = _run_date
 
     # 2) ensure date types are pure dates (no time)
     daily_kpi["date"] = pd.to_datetime(daily_kpi["date"]).dt.date
-    
+
     # With this, gold stays aligned with the subsequent Postgres schema.
 
     # Saving GOLD
@@ -160,16 +160,25 @@ def build_gold(run_date: str | None = None) -> str:
     daily_enriched_parquet = os.path.join(out_dir, "weather_daily_enriched.parquet")
 
     daily_kpi.to_parquet(daily_enriched_parquet, index=False)
-    daily_kpis_out = daily_kpi.rename(columns={
-        "temp_min": "avg_temp_min",
-        "temp_max": "avg_temp_max",
-        "precip_mm": "avg_precip_mm",
-    })[["city_code", "avg_temp_min", "avg_temp_max", "avg_precip_mm"]]
+    daily_kpis_out = daily_kpi.rename(
+        columns={
+            "temp_min": "avg_temp_min",
+            "temp_max": "avg_temp_max",
+            "precip_mm": "avg_precip_mm",
+        }
+    )[["city_code", "avg_temp_min", "avg_temp_max", "avg_precip_mm"]]
     daily_kpis_out["run_date"] = _run_date
     daily_kpis_out.to_parquet(daily_parquet, index=False)
-    monthly_kpi = monthly_kpi[[
-        "city_code","month","avg_temp_min","avg_temp_max","avg_temp_avg","total_precip"
-    ]]
+    monthly_kpi = monthly_kpi[
+        [
+            "city_code",
+            "month",
+            "avg_temp_min",
+            "avg_temp_max",
+            "avg_temp_avg",
+            "total_precip",
+        ]
+    ]
     monthly_kpi["run_date"] = _run_date
     monthly_kpi.to_parquet(monthly_parquet, index=False)
 
