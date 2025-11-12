@@ -1,5 +1,3 @@
-
-
 def test_fetch_city_weather_mock(monkeypatch):
     # Test to make sure the API builds correctly and handles responses
     from ingestion import fetch_weather as fw

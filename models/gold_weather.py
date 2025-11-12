@@ -1,7 +1,6 @@
 import datetime
 import glob
 import os
-
 import pandas as pd
 
 DATA_DIR = os.getenv("DATA_DIR", "./data")
@@ -9,13 +8,13 @@ DATA_DIR = os.getenv("DATA_DIR", "./data")
 
 def build_gold(run_date: str | None = None) -> str:
     """
-    GOLD layer builder:
+    Brief explanation of the GOLD layer builder:
       - Reads all SILVER (clean) partitions (data/clean/*/weather.parquet)
       - Builds daily KPIs (with 7d/14d rolling) and YoY same-day deltas
       - Builds monthly aggregates
       - Saves GOLD outputs partitioned by run_date
     """
-    # 1) Read all clean partitions
+    # 1) Reading all clean partitions
     clean_paths = glob.glob(os.path.join(DATA_DIR, "clean", "*", "weather.parquet"))
     if not clean_paths:
         print("No clean (silver) files found.")
@@ -75,13 +74,14 @@ def build_gold(run_date: str | None = None) -> str:
 
     # 2.b YoY same-day (shift by 1 year)
     prev = daily_kpi[["city_code", "date", "temp_min", "temp_max"]].copy()
-    # Mapeamos el dato del año pasado al mismo día de este año:
+
+    # Mapping date to previous year
     prev["date"] = prev["date"] + pd.DateOffset(years=1)
     prev = prev.rename(columns={"temp_min": "temp_min_ly", "temp_max": "temp_max_ly"})
 
     daily_kpi = daily_kpi.merge(prev, on=["city_code", "date"], how="left")
 
-    # Variaciones % (evitar div/0)
+    # Variations % (avoiding zero divisions)
     def _pct(curr, prev):
         return (curr - prev) / prev.replace({0: pd.NA}) * 100
 
@@ -97,27 +97,26 @@ def build_gold(run_date: str | None = None) -> str:
     # --------------------
     # MONTHLY KPIs (city-month)
     # --------------------
+    # --- Monthly KPIs (schema fijo para Postgres) ---
+    m = df.copy()
+    m["month"] = pd.to_datetime(m["date"]).dt.to_period("M").astype(str)
+
+    print(m.columns)
+    print(m.head())
+
     monthly_kpi = (
-        df.groupby(["city_code", "yyyymm"], dropna=False)
+        m.groupby(["city_code", "month"], dropna=False)
         .agg(
-            days=("date", "nunique"),
-            avg_temp=("temp_avg", "mean"),
-            max_temp=("temp_max", "max"),
-            min_temp=("temp_min", "min"),
-            avg_range=("temp_range", "mean"),
-            total_precip_mm=("precip_mm", "sum"),
-            rainy_days=("precip_mm", lambda s: (s > 0).sum()),
+            avg_temp_min=("temp_min", "mean"),
+            avg_temp_max=("temp_max", "mean"),
+            avg_temp_avg=("temp_avg", "mean"),
+            total_precip=("precip_mm", "sum"),
         )
         .reset_index()
-        .sort_values(["city_code", "yyyymm"])
+        .sort_values(["city_code", "month"])
     )
 
-    # 3-month rolling average temperature (by city)
-    monthly_kpi["avg_temp_roll3"] = monthly_kpi.groupby("city_code")[
-        "avg_temp"
-    ].transform(lambda s: s.rolling(3, min_periods=1).mean())
-
-    # --- Round numeric metrics to 1 decimal ---
+    # Round numeric metrics to 1 decimal
     for col in [
         "temp_max",
         "temp_min",
@@ -136,20 +135,22 @@ def build_gold(run_date: str | None = None) -> str:
         if col in daily_kpi.columns:
             daily_kpi[col] = daily_kpi[col].round(1)
 
-    for col in [
-        "avg_temp",
-        "max_temp",
-        "min_temp",
-        "avg_range",
-        "total_precip_mm",
-        "avg_temp_roll3",
-    ]:
+    for col in ["avg_temp_min", "avg_temp_max", "avg_temp_avg", "total_precip"]:
         if col in monthly_kpi.columns:
             monthly_kpi[col] = monthly_kpi[col].round(1)
 
-    # --------------------
-    # Save GOLD
-    # --------------------
+    # Harmonize columns before saving.
+    # 1) add run_date columns (explicit, besides folder partition)
+    _run_date = run_date or datetime.date.today().isoformat()
+    daily_kpi["run_date"] = _run_date
+    monthly_kpi["run_date"] = _run_date
+
+    # 2) ensure date types are pure dates (no time)
+    daily_kpi["date"] = pd.to_datetime(daily_kpi["date"]).dt.date
+
+    # With this, gold stays aligned with the subsequent Postgres schema.
+
+    # Saving GOLD
     run_date = run_date or datetime.date.today().isoformat()
     out_dir = os.path.join(DATA_DIR, "gold", run_date)
     os.makedirs(out_dir, exist_ok=True)
@@ -158,19 +159,27 @@ def build_gold(run_date: str | None = None) -> str:
     monthly_parquet = os.path.join(out_dir, "weather_monthly_kpis.parquet")
     daily_enriched_parquet = os.path.join(out_dir, "weather_daily_enriched.parquet")
 
-    daily_kpi.to_parquet(daily_enriched_parquet, index=False)  # con rolling + YoY
-    # (si querés mantener el daily "simple", lo podés guardar también)
-    daily_kpi[
+    daily_kpi.to_parquet(daily_enriched_parquet, index=False)
+    daily_kpis_out = daily_kpi.rename(
+        columns={
+            "temp_min": "avg_temp_min",
+            "temp_max": "avg_temp_max",
+            "precip_mm": "avg_precip_mm",
+        }
+    )[["city_code", "avg_temp_min", "avg_temp_max", "avg_precip_mm"]]
+    daily_kpis_out["run_date"] = _run_date
+    daily_kpis_out.to_parquet(daily_parquet, index=False)
+    monthly_kpi = monthly_kpi[
         [
             "city_code",
-            "date",
-            "temp_max",
-            "temp_min",
-            "temp_avg",
-            "temp_range",
-            "precip_mm",
+            "month",
+            "avg_temp_min",
+            "avg_temp_max",
+            "avg_temp_avg",
+            "total_precip",
         ]
-    ].to_parquet(daily_parquet, index=False)
+    ]
+    monthly_kpi["run_date"] = _run_date
     monthly_kpi.to_parquet(monthly_parquet, index=False)
 
     # CSV samples
