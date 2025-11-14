@@ -79,8 +79,8 @@ docker compose up -d
 ```
 
 Airflow UI → http://localhost:8080  
-User: `airflow`  
-Password: `airflow`
+User: `****`  
+Password: `****`
 
 Trigger the `weather_pipeline` DAG manually or schedule it.
 
@@ -93,7 +93,7 @@ Default connection (dummy values):
 ```
 Host: localhost
 Port: 5439
-Database: weatherdb
+Database: ****
 User: ****
 Password: ****
 ```
