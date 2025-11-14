@@ -118,6 +118,11 @@ Están integrados con GitHub Actions, lo que permite ejecutar los tests automát
 Workflow ubicado en:
  ``` .github/workflows/tests.yml ```
 
+El workflow de GitHub Actions se ejecuta automáticamente y realiza:
+	•	Instalación de dependencias
+	•	Linting (validación de estilo de código)
+	•	Ejecución de tests unitarios
+
 Esto garantiza reproducibilidad y calidad del ETL.
 
 
