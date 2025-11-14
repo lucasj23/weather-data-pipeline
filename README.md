@@ -1,4 +1,4 @@
-# 📌 Weather Data Pipeline
+# Weather Data Pipeline
 
 ## Overview
 
