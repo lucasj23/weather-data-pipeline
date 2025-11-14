@@ -6,9 +6,22 @@ services:
       - POSTGRES_PASSWORD=airflow
       - POSTGRES_DB=airflow
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - ./airflow/db_data:/var/lib/postgresql/data
+
+  postgres-pipeline:
+    image: postgres:15
+    container_name: postgres-pipeline
+    environment:
+      POSTGRES_USER: pipeline
+      POSTGRES_PASSWORD: pipeline
+      POSTGRES_DB: weather
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./db_data_pipeline:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   airflow:
     image: apache/airflow:2.9.3
@@ -17,7 +30,6 @@ services:
       - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
       - AIRFLOW_UID=${AIRFLOW_UID}
       - AIRFLOW__CORE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
       - AIRFLOW__WEBSERVER__SECRET_KEY=supersecretkey
       - DATA_DIR=/opt/pipeline/data
       - PG_DSN=${PG_DSN}
