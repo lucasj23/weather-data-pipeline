@@ -5,15 +5,17 @@
 Este proyecto implementa un pipeline de datos moderno, completamente orquestado con Apache Airflow y desplegado mediante Docker, para procesar información meteorológica histórica y reciente.
 
 El objetivo del pipeline es construir un flujo automatizado, reproducible y modular que:
-	•	Extrae datos meteorológicos desde una API pública (capa raw).
-	•	Limpia, normaliza y valida los datos (silver).
-	•	Genera métricas derivadas y KPIs (gold).
-	•	Carga los resultados en un Data Warehouse PostgreSQL dentro de Docker.
-
+```
+	- Extrae datos meteorológicos desde una API pública (capa raw).
+	- Limpia, normaliza y valida los datos (silver).
+	- Genera métricas derivadas y KPIs (gold).
+	- Carga los resultados en un Data Warehouse PostgreSQL dentro de Docker.
+```
 El proyecto está diseñado siguiendo buenas prácticas de Data Engineering, ELT, versionado con GitHub, testing automático y CI/CD.
 
 ### Arquitectura del Pipeline
 
+```
          API (raw)
              ↓
    Clean / Transform (silver)
@@ -23,13 +25,16 @@ El proyecto está diseñado siguiendo buenas prácticas de Data Engineering, ELT
    PostgreSQL (Data Warehouse)
              ↓
  Orquestación: Apache Airflow
+```
 
 DAG Principal: 
-fetch → clean → gold → load
+ ```fetch → clean → gold → load ```.
+ 
 Cada etapa corre como un script independiente dentro del contenedor de Airflow.
 
 
 ### Estructura del Proyecto
+ ```
 weather-data-pipeline/
 │
 ├── airflow/
@@ -59,16 +64,16 @@ weather-data-pipeline/
 ├── init.sql
 ├── .gitignore
 └── README.md
-
+ ```
 
 ### Cómo levantar el proyecto
   Desde la carpeta raíz:
-docker compose up -d
+ ```docker compose up -d ```
 
 Airflow estará disponible en:
 http://localhost:8080
-Usuario: airflow
-Contraseña: airflow
+Usuario: ****
+Contraseña: ****
 
 El DAG weather_pipeline puede ejecutarse manualmente o programarse para correr automáticamente.
 
@@ -79,8 +84,8 @@ Conexión (valores por defecto):
 Host: localhost
 Port: 5439
 Database: weatherdb
-User: weather_user
-Password: weather_pass
+User: ****
+Password: ****
 
 Tablas generadas automáticamente:
 	•	weather_silver
@@ -111,7 +116,7 @@ tests/
 Están integrados con GitHub Actions, lo que permite ejecutar los tests automáticamente en cada push o Pull Request.
 
 Workflow ubicado en:
-.github/workflows/tests.yml
+ ``` .github/workflows/tests.yml ```
 
 Esto garantiza reproducibilidad y calidad del ETL.
 
