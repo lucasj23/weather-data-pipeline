@@ -155,13 +155,4 @@ Workflow:
 - Pytest  
 - GitHub Actions  
 
----
-
-## Optional Enhancements (Future Work)
-
-- Slack/email alerting for failures  
-- dbt SQL models  
-- Integration tests  
-- Makefile automation  
-- Dashboards (Power BI / Tableau)
 
