@@ -8,6 +8,7 @@ __pycache__/
 *.so
 
 airflow/db_data/
+airflow/logs/
 
 # Distribution / packaging
 .Python
