@@ -12,7 +12,7 @@ The goal is to build an **automated, reproducible, and modular** ETL workflow th
 - Loads results into a PostgreSQL Data Warehouse (Dockerized)
 
 The project follows best practices in Data Engineering: ELT, orchestration, containerized infrastructure, unit testing, and CI/CD.
-
+Also, the project can serve as the foundation for analytical use cases such as building dashboards, querying historical climate behavior, identifying long-term temperature trends, and supporting future forecasting or BI applications. The processed data stored in PostgreSQL enables flexible querying and further visualization in tools like Tableau, Power BI, or Python notebooks.
 ---
 
 ## Pipeline Architecture
@@ -156,3 +156,247 @@ Workflow:
 - GitHub Actions  
 
 
+
+# Weather Data Pipeline
+
+## Overview
+
+This project implements a fully automated, end-to-end weather data pipeline orchestrated with **Apache Airflow** and deployed using **Docker**. It processes **historical and daily real‑time weather data** for the following cities:
+
+- Buenos Aires (BUE)
+- Santiago de Chile (SCL)
+- Madrid (MAD)
+- Miami (MIA)
+
+The pipeline is designed to be **modular, reproducible, and production‑ready**, following modern Data Engineering best practices.  
+It supports historical backfilling through the environment variable **`DAYS_BACK`**, allowing control over how many past days to ingest.
+
+The system automatically:
+
+- Extracts raw weather data from the **Open‑Meteo API** (no API key required)
+- Cleans and normalizes the dataset into a Silver layer  
+- Computes enriched features and KPIs in the Gold layer  
+- Loads all results into a Dockerized PostgreSQL Warehouse  
+- Executes daily via an Airflow‑scheduled DAG  
+
+---
+
+## Pipeline Architecture
+
+```
+         API (raw)
+             ↓
+   Clean / Transform (silver)
+             ↓
+ Feature Engineering + KPIs (gold)
+             ↓
+   PostgreSQL (Data Warehouse)
+             ↓
+  Orchestration: Apache Airflow
+```
+
+Main DAG:  
+`fetch → clean → gold → load`
+
+---
+
+## Airflow DAG
+
+The orchestrator of the entire workflow is the DAG **`weather_pipeline`**, located in:
+
+```
+airflow/dags/weather_pipeline.py
+```
+
+The DAG runs every day at **08:00 AM** and executes each ETL step as an independent Python script:
+
+- `ingestion/fetch_weather.py`
+- `transformations/clean_weather.py`
+- `models/gold_weather.py`
+- `loaders/load_to_pg.py`
+
+This design keeps the pipeline modular and easy to debug.
+
+---
+
+## Project Structure
+
+```
+weather-data-pipeline/
+│
+├── airflow/
+│   ├── dags/
+│   │   └── weather_pipeline.py
+│   ├── db_data/        (ignored)
+│   └── logs/           (ignored)
+│
+├── ingestion/
+│   └── fetch_weather.py
+│
+├── transformations/
+│   └── clean_weather.py
+│
+├── models/
+│   └── gold_weather.py
+│
+├── loaders/
+│   └── load_to_pg.py
+│
+├── sql/
+│   └── init.sql
+│
+├── tests/
+│   ├── test_clean_weather.py
+│   └── test_gold_weather.py
+│
+├── data/               (ignored)
+├── docker-compose.yml
+├── .gitignore
+└── README.md
+```
+
+---
+
+## Folder Breakdown
+
+### `ingestion/`
+Fetches weather data from Open‑Meteo and writes raw parquet files.
+
+### `transformations/`
+Cleans the raw data, fixes types, normalizes formats, validates schema, and writes Silver data.
+
+### `models/`
+Builds the Gold layer, including enriched features and all **daily** and **monthly** KPIs.
+
+### `loaders/`
+Loads Silver/Gold tables into PostgreSQL using SQLAlchemy.
+
+### `airflow/`
+Holds the DAG, log directories, and metadata used by Airflow.
+
+### `sql/`
+Contains the initialization script for automatically creating database tables inside the PostgreSQL container.
+
+### `tests/`
+Includes unit tests validating Silver and Gold transformations.
+
+---
+
+## How to Run the Pipeline
+
+### 1. Start the full stack
+
+From the project root:
+
+```
+docker compose up --build -d
+```
+
+### 2. Access Airflow
+
+```
+http://localhost:8080
+User: airflow
+Password: airflow
+```
+
+### 3. Trigger the DAG
+
+- Open Airflow UI
+- Search for **weather_pipeline**
+- Click **Trigger DAG**
+
+Silver and Gold outputs are written under:
+
+```
+data/silver/<run_date>/
+data/gold/<run_date>/
+```
+
+---
+
+## PostgreSQL Warehouse
+
+The project includes a dedicated PostgreSQL instance running inside Docker.  
+It initializes itself automatically using `sql/init.sql`.
+
+Default connection (values masked intentionally):
+
+```
+Host: localhost
+Port: 5433
+Database: ****
+User: ****
+Password: ****
+```
+
+Tables created:
+
+- `weather_silver`
+- `weather_daily`
+- `weather_daily_kpis`
+- `weather_monthly_kpis`
+
+---
+
+## KPIs Generated
+
+### Daily KPIs
+- Average minimum temperature  
+- Average maximum temperature  
+- Average precipitation  
+
+### Monthly KPIs
+- Average minimum temperature  
+- Average maximum temperature  
+- Average temperature  
+- Total precipitation  
+
+---
+
+## Logging
+
+All major steps include structured logging using Python’s `logging` module.  
+Airflow captures these logs automatically, enabling visibility into:
+
+- Step execution status  
+- Row counts  
+- Missing/invalid data  
+- Failures with stack traces  
+
+---
+
+## Testing & CI/CD
+
+Unit tests are available under:
+
+```
+tests/
+```
+
+GitHub Actions runs automatically on each push:
+
+- Dependency installation  
+- Linting (flake8)  
+- Unit tests (pytest)
+
+Workflow file:
+
+```
+.github/workflows/tests.yml
+```
+
+This ensures consistent code quality and pipeline correctness.
+
+---
+
+## Technologies Used
+
+- Python 3.12  
+- Docker & Docker Compose  
+- Apache Airflow  
+- PostgreSQL  
+- Pandas  
+- SQLAlchemy  
+- Pytest  
+- GitHub Actions  
