@@ -5,8 +5,7 @@ import pandas as pd
 import logging
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -14,7 +13,7 @@ DATA_DIR = os.getenv("DATA_DIR", "./data")
 
 
 def build_gold(run_date: str | None = None) -> str:
-    logger.info("Starting gold_weather()")  
+    logger.info("Starting gold_weather()")
     """
     Brief explanation of the GOLD layer builder:
       - Reads all SILVER (clean) partitions (data/clean/*/weather.parquet)

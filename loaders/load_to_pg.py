@@ -5,9 +5,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.dialects import postgresql
 from dotenv import load_dotenv
 import logging
+
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 

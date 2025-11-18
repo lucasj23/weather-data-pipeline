@@ -5,10 +5,10 @@ import pandas as pd
 import logging
 
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
 
 def _latest_run_date(base_dir: str) -> str:
     parts = sorted(glob.glob(os.path.join(base_dir, "raw", "*")))
@@ -21,7 +21,7 @@ def clean_weather(run_date: str | None = None) -> str:
     BASE_DIR = os.getenv("DATA_DIR", "./data")
     logger.info("Starting clean_weather()")
     logger.info(f"Using BASE_DIR={BASE_DIR}")
-    
+
     """Read RAW Open-Meteo data and create a tidy table: one row per city-date."""
     run_date = run_date or _latest_run_date(BASE_DIR)
     raw_path = os.path.join(BASE_DIR, "raw", run_date, "weather.json")
