@@ -92,7 +92,7 @@ Default connection (dummy values):
 
 ```
 Host: localhost
-Port: 5439
+Port: 5433
 Database: ****
 User: ****
 Password: ****
