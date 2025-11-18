@@ -2,11 +2,19 @@ import datetime
 import glob
 import os
 import pandas as pd
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 DATA_DIR = os.getenv("DATA_DIR", "./data")
 
 
 def build_gold(run_date: str | None = None) -> str:
+    logger.info("Starting gold_weather()")  
     """
     Brief explanation of the GOLD layer builder:
       - Reads all SILVER (clean) partitions (data/clean/*/weather.parquet)
@@ -20,6 +28,7 @@ def build_gold(run_date: str | None = None) -> str:
         print("No clean (silver) files found.")
         return ""
     df = pd.concat([pd.read_parquet(p) for p in clean_paths], ignore_index=True)
+    logger.info(f"SILVER combined shape: {df.shape}")
 
     # Basic validations
     needed = {
@@ -159,6 +168,7 @@ def build_gold(run_date: str | None = None) -> str:
     monthly_parquet = os.path.join(out_dir, "weather_monthly_kpis.parquet")
     daily_enriched_parquet = os.path.join(out_dir, "weather_daily_enriched.parquet")
 
+    logger.info(f"Saving GOLD outputs for run_date={run_date}")
     daily_kpi.to_parquet(daily_enriched_parquet, index=False)
     daily_kpis_out = daily_kpi.rename(
         columns={

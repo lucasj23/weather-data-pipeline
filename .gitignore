@@ -7,8 +7,16 @@ __pycache__/
 # C extensions
 *.so
 
+# Airflow specific folders
 airflow/db_data/
 airflow/logs/
+
+# General data folders - generated as part of the pipeline
+data/raw/
+data/clean/
+data/gold/
+db_data_pipeline/
+postgres-data/
 
 # Distribution / packaging
 .Python

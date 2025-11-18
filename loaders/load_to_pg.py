@@ -4,6 +4,12 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.dialects import postgresql
 from dotenv import load_dotenv
+import logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 DATA_DIR = os.getenv("DATA_DIR", "./data")
@@ -73,9 +79,10 @@ def load_weather_table(
     conflict_keys: columns defining uniqueness constraint
     do_update    : whether to update existing records (default=False)
     """
+    logger.info(f"Loading table '{table_name}' into Postgres")
     paths = glob.glob(os.path.join(DATA_DIR, parquet_glob))
     if not paths:
-        print(f"No files found for pattern: {parquet_glob}")
+        logger.warning(f"No files found for pattern: {parquet_glob}")
         return 0
 
     total_rows = 0
@@ -83,6 +90,7 @@ def load_weather_table(
 
     for p in paths:
         df = pd.read_parquet(p)
+        logger.info(f"Loaded parquet {p} with {len(df)} rows")
 
         # Derive run_date from folder name .../<run_date>/file.parquet
         run_date = os.path.basename(os.path.dirname(p))
@@ -110,7 +118,7 @@ def load_weather_table(
 
         total_rows += len(df)
 
-    print(f"✅ Loaded {total_rows} rows into weather.{table_name}")
+    logger.info(f"Loaded {total_rows} rows into weather.{table_name}")
     return total_rows
 
 
