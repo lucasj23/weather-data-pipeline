@@ -31,7 +31,7 @@ jobs:
           flake8 --max-line-length=120 --exclude=.venv,__pycache__,data
 
       - name: Run mypy
-        run: mypy --config-file mypy.ini .
+        run: mypy --config-file ./weather-data-pipeline/mypy.ini weather-data-pipeline
 
       - name: Run tests
         run: pytest --maxfail=1 --disable-warnings -q
