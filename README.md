@@ -59,7 +59,7 @@ weather-data-pipeline/
 │
 ├── tests/
 │   ├── test_clean_weather.py
-│   └── test_gold_weather.py
+│   └── test_fetch_weather.py
 │
 ├── data/               (ignored)
 ├── docker-compose.yml
@@ -79,8 +79,8 @@ docker compose up -d
 ```
 
 Airflow UI → http://localhost:8080  
-User: `****`  
-Password: `****`
+User: airflow  
+Password: airflow
 
 Trigger the `weather_pipeline` DAG manually or schedule it.
 
@@ -97,6 +97,9 @@ Database: ****
 User: ****
 Password: ****
 ```
+
+**Note:** Inside the Docker container, PostgreSQL listens on its default internal port `5432`.  
+To avoid conflicts with any local PostgreSQL installation on the host machine, the service is exposed on port `5433` externally using the mapping `5433:5432` in `docker-compose.yml`.
 
 Tables generated:
 
@@ -247,7 +250,7 @@ weather-data-pipeline/
 │
 ├── tests/
 │   ├── test_clean_weather.py
-│   └── test_gold_weather.py
+│   └── test_fetch_weather.py
 │
 ├── data/               (ignored)
 ├── docker-compose.yml
@@ -312,6 +315,55 @@ Silver and Gold outputs are written under:
 data/silver/<run_date>/
 data/gold/<run_date>/
 ```
+
+## Environment Variables (`.env`)
+
+This project requires a `.env` file in the project root directory.  
+Docker Compose and Airflow use these environment variables to correctly initialize the services.
+
+Create the file by copying the example:
+
+```bash
+cp .env.example .env
+```
+
+Then replace the placeholder values with your own:
+
+```env
+AIRFLOW_UID=50000
+PG_DSN=postgresql+psycopg2://<USER>:<PASSWORD>@postgres-pipeline:5432/weather
+```
+
+## Managing Docker Services
+
+To stop, pause, restart, or rebuild the pipeline infrastructure, use the following Docker Compose commands from the project root:
+
+### **Stop all services**
+```bash
+docker compose down
+```
+
+### **Pause running services**
+```bash
+docker compose pause
+```
+
+### **Resume paused services**
+```bash
+docker compose unpause
+```
+
+### **Restart services**
+```bash
+docker compose restart
+```
+
+### **Rebuild the images and start everything**
+```bash
+docker compose up --build -d
+```
+
+These commands allow you to fully control the Airflow and PostgreSQL containers used by the pipeline.
 
 ---
 
@@ -399,4 +451,4 @@ This ensures consistent code quality and pipeline correctness.
 - Pandas  
 - SQLAlchemy  
 - Pytest  
-- GitHub Actions  
+- GitHub Actions
